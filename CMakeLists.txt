@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.4...3.18)
 project(basic_ml LANGUAGES CXX)
-add_compile_options(-O3 -Wall -Wextra -Wpedantic -Werror)
+add_compile_options(-O3 -Wall -Wextra -Werror)
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 20)
 
 # EXTRA INCLUDE PKGs
+find_package(Python COMPONENTS Interpreter Development)
 find_package (Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(pybind11 REQUIRED)
 include_directories(${PYBIND11_INCLUDE_DIR})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-pybind11_add_module(basic_ml python/module.cpp)
+pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp)
+# target_link_libraries(basic_ml pybind11::headers)
 
 # TESTING SUITE
 include(FetchContent)
