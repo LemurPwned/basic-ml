@@ -28,9 +28,24 @@ PYBIND11_MODULE(basic_ml, m)
         .def(py::init<unsigned int, unsigned int, double, double>(),
              "maxShadowCount"_a = 10,
              "minTrackLength"_a = 3,
-             "iouThreshold"_a = 0.3,
+             "iouThreshold"_a = 0.8,
              "minConfidenceThreshold"_a = 0.6)
-        .def("update", &IOUTracker::update, "detections"_a.noconvert());
+        .def("init", &IOUTracker::init, "detections"_a.noconvert())
+        .def("update", &IOUTracker::update, "detections"_a.noconvert())
+        .def("getActiveTracks", &IOUTracker::getActiveTracks)
+        .def("getActiveTrackIds", &IOUTracker::getActiveTrackIds)
+        .def("getFinalTracks", &IOUTracker::getFinalTracks);
+    py::class_<Track>(tracker_module, "Track")
+        .def(py::init<const std::vector<double> &>())
+        .def("getBestTrackScore", &Track::getBestTrackScore)
+        .def("getTrackLength", &Track::getTrackLength)
+        .def("getLastDetection", &Track::getLastDetection)
+        .def("getShadowCount", &Track::getShadowCount)
+        .def("getId", &Track::getId)
+        .def("getDetections", &Track::getDetections);
+
+    // Monte Carlo module
+    py::module monte_carlo_module = m.def_submodule("mc", "Monte Carlo");
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
