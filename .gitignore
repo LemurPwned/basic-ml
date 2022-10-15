@@ -2,7 +2,15 @@ build/
 dist/
 _build/
 _generate/
+*.o
+*.a
 *.so
 *.py[cod]
 *.egg-info
 *env*
+data/
+*.sh
+
+
+.DS_Store
+.vscode/

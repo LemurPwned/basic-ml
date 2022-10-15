@@ -1,13 +1,15 @@
-# basic_ml
+# Basic ML library
 
-[![Gitter][gitter-badge]][gitter-link]
+![](assets/main_image.png)
+
+<!-- [![Gitter][gitter-badge]][gitter-link]
 
 | Badge      | status                                                       |
 | ---------- | ------------------------------------------------------------ |
 | pip builds | [![Pip Actions Status][actions-pip-badge]][actions-pip-link] |
 
 [actions-pip-link]: https://github.com/pybind/basic_ml/actions?query=workflow%3A%22Pip
-[actions-pip-badge]: https://github.com/pybind/basic_ml/workflows/Pip/badge.svg
+[actions-pip-badge]: https://github.com/pybind/basic_ml/workflows/Pip/badge.svg -->
 
 A library of basic machine learning libraries -- written in C++, with Python bindings.
 
