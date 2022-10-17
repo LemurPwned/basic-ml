@@ -67,13 +67,13 @@ def score_tracker(gt_hypotheses, tracker_hypotheses):
     return cost_matrix
     
 
-def test_tracker(maxShadowCount=0, minTrackLength=3, iouThreshold=0.5, silent=False):
+def test_tracker(maxShadowCount=100, minTrackLength=1, iouThreshold=0.646, silent=False):
     """
     Test tracker performance on MOT16 train set.
     """
     names, acc_list = [], []
     # take a smaller subset of the data for testing
-    mot_range = (10, 11, 12, 13)
+    mot_range = (9, 10, 11, 13)
     for mot_num in mot_range:
         filename = ROOT / f"MOT16-{mot_num:02d}"
         names.append(filename.name)
@@ -112,7 +112,7 @@ def optimise_tracker_performance():
     def score_tracker(maxShadowCount, minTrackLength, iouThreshold):
         summary = test_tracker(maxShadowCount=int(maxShadowCount), 
         minTrackLength=int(minTrackLength), 
-        iouThreshold=iouThreshold, silent=False)
+        iouThreshold=iouThreshold, silent=True)
         return summary['motp'].mean()
 
     optimiser = BayesianOptimization(
@@ -126,5 +126,5 @@ def optimise_tracker_performance():
     )
 
 if __name__ == "__main__":
-    # test_tracker()
-    optimise_tracker_performance()
+    sum = test_tracker()
+    # optimise_tracker_performance()

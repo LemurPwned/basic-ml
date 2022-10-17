@@ -4,7 +4,12 @@
 
 using namespace emscripten;
 
-EMSCRIPTEN_BINDINGS(basic_ml){
+EMSCRIPTEN_BINDINGS(basic_ml)
+{
+    // emscripten requires to register vectors explicitly
+    register_vector<double>("DoubleVector");
+    register_vector<std::vector<double>>("DoubleDoubleVector");
+    reigster_vector<std::vector<Track>>("TrackVector");
     class_<RPCA>("RPCA")
         .constructor<unsigned int, double>()
         .function("run", &RPCA::run)

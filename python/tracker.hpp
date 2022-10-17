@@ -158,9 +158,10 @@ public:
             }
         }
         // remove cutoff tracks before adding new ones
-        for (const auto &target_i : toErase)
+        // remove starting from the latest!
+        for (int k = (int)toErase.size() - 1; k >= 0; k--)
         {
-            activeTracks.erase(activeTracks.begin() + target_i);
+            activeTracks.erase(activeTracks.begin() + toErase[k]);
         }
         // push back remaining detections as new tracks
         for (const auto &det : detections)

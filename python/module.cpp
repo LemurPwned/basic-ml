@@ -26,7 +26,7 @@ PYBIND11_MODULE(basic_ml, m)
     py::module tracker_module = m.def_submodule("tracker", "IOU Tracker");
     py::class_<IOUTracker>(tracker_module, "Tracker")
         .def(py::init<unsigned int, unsigned int, double, double>(),
-             "maxShadowCount"_a = 10,
+             "maxShadowCount"_a = 30,
              "minTrackLength"_a = 3,
              "iouThreshold"_a = 0.8,
              "minConfidenceThreshold"_a = 0.6)

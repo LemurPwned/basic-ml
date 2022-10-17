@@ -11,7 +11,7 @@
 [actions-pip-link]: https://github.com/pybind/basic_ml/actions?query=workflow%3A%22Pip
 [actions-pip-badge]: https://github.com/pybind/basic_ml/workflows/Pip/badge.svg -->
 
-A library of basic machine learning libraries -- written in C++, with Python bindings.
+A library of basic machine learning algorithms -- written in C++, with Python bindings.
 
 ## Installation
 
