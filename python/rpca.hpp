@@ -47,23 +47,14 @@ public:
     MatriXdR shrinkMatrix(const MatriXdR &X, double tau)
     {
         const MatriXdR tauM = MatriXdR::Constant(X.rows(), X.cols(), tau);
-        const MatriXdR thrsM = (X.cwiseAbs() - tauM);
-        if (thrsM.maxCoeff() > 0)
-        {
-            return thrsM.cwiseProduct(X.cwiseSign());
-        }
-        else
-        {
-            return MatriXdR::Zero(X.rows(), X.cols());
-        }
+        const MatriXdR thrsM = (X.cwiseAbs() - tauM).cwiseMax(0.0);
+        return thrsM.cwiseProduct(X.cwiseSign());
     }
     MatriXdR truncatedSVD(const MatriXdR &X, double tau)
     {
         Eigen::BDCSVD<MatriXdR> svd(
             X, Eigen::ComputeThinV | Eigen::ComputeThinU);
         const MatriXdR Stmp = svd.singularValues().asDiagonal();
-        // MatriXdR Stmp(X.rows(), X.cols());
-        // Stmp << (svd.singularValues())[0], 0.0, 0.0, (svd.singularValues())[1];
         const auto shrunkM = shrinkMatrix(Stmp, tau);
         return svd.matrixU() * shrunkM * svd.matrixV().transpose();
     }
@@ -72,9 +63,16 @@ public:
     {
         const unsigned int r = X.rows();
         const unsigned int c = X.cols();
-        const double mu = r * c / (4. * X.cwiseAbs().sum());
-        const double lambda = 1. / (r ? r > c : c);
+        const double ord1norm = X.cwiseAbs().colwise().sum().maxCoeff();
+        const double mu = ((float)(r * c)) / (4. * ord1norm);
+        const double maxDim = (double)std::max(r, c);
+        const double lambda = 1. / sqrt(maxDim);
         const double threshold = this->thresholdScale * getFrobeniusNorm(X);
+
+        // std::cout << "threshold: " << threshold << std::endl;
+        // std::cout << "mu: " << mu << std::endl;
+        // std::cout << "lambda: " << lambda << std::endl;
+        // std::cout << "Norm: " << getFrobeniusNorm(X) << std::endl;
         unsigned int count = 0;
 
         // initialise L, S, Y zero matrices
@@ -85,14 +83,15 @@ public:
         while (
             (count < this->maxCount) && (getFrobeniusNorm(X - L - S) > threshold))
         {
-            const MatriXdR XS = X - S - (1 / mu) * Y;
-            const MatriXdR XL = X - L + (1 / mu) * Y;
+            const MatriXdR XS = X - S + (1. / mu) * Y;
             L = truncatedSVD(XS, 1. / mu);
+            const MatriXdR XL = X - L + (1. / mu) * Y;
             S = shrinkMatrix(XL, lambda / mu);
             Y = Y + mu * (X - L - S);
             count++;
         }
+        std::cout << "Norm of X - L - S: " << getFrobeniusNorm(X - L - S) << std::endl;
+        std::cout << "RPCA: " << count << " iterations" << std::endl;
     }
 };
 #endif // RPCA_HPP
-
