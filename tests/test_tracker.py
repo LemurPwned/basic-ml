@@ -81,14 +81,16 @@ def test_tracker(maxShadowCount=100, minTrackLength=1, iouThreshold=0.646, silen
         gt = read_mot_txt(filename/'gt'/'gt.txt')
         frames = gt["frame"].max() + 1
         tracker = Tracker(maxShadowCount=maxShadowCount, minTrackLength=minTrackLength, iouThreshold=iouThreshold)
-        for frame in tqdm(range(1, frames), desc=f"Processing {filename.name}", disable=silent):
+        gt_detections, gt_ids = get_box(gt, 1)
+        tracker.init(gt_detections.astype(np.float32).tolist())
+        for frame in tqdm(range(2, frames), desc=f"Processing {filename.name}", disable=silent):
             gt_detections, gt_ids = get_box(gt, frame)
             tracker.update(gt_detections.astype(np.float32).tolist())
             tracks = tracker.getActiveTracks()
             tracker_dets = [track.getLastDetection() for track in tracks]
             cost_matrix = score_tracker(gt_detections, tracker_hypotheses=tracker_dets)
-            trakcer_ids = [track.getId() for track in tracks]
-            acc.update(gt_ids, trakcer_ids, cost_matrix.tolist())
+            tracker_ids = [track.getId() for track in tracks]
+            acc.update(gt_ids, tracker_ids, cost_matrix.tolist())
         acc_list.append(acc)
     mh = mm.metrics.create()
     summary = mh.compute_many(

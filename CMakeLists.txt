@@ -12,7 +12,8 @@ find_package(pybind11 REQUIRED)
 include_directories(${PYBIND11_INCLUDE_DIR})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp)
+pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp
+                    python/phase.hpp)
 
 # TESTING SUITE
 include(FetchContent)

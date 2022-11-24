@@ -4,6 +4,13 @@
 #include <vector>
 #include <iostream>
 
+/**
+ * @brief Compute Intersection Over Union
+ * Returns IOU of two bounding boxes.
+ * @param box1
+ * @param box2
+ * @return double
+ */
 double computeIOU(const std::vector<double> &box1, const std::vector<double> &box2)
 {
     const double x1 = std::max(box1[0], box2[0]);
@@ -19,6 +26,40 @@ double computeIOU(const std::vector<double> &box1, const std::vector<double> &bo
     const double bbox2Area = (box2[2] - box2[0] + 1) * (box2[3] - box2[1] + 1);
     const double iou = inter / (bbox1Area + bbox2Area - inter);
     return iou;
+}
+
+double computeArea(const std::vector<double> &box)
+{
+    return (box[2] - box[0] + 1) * (box[3] - box[1] + 1);
+}
+
+/**
+ * @brief NMS algorithm
+ * Does non-maximum suppression given boxes and scores.
+ * @param boxList List of boxes to perform NMS on. Each box is represented as a list of 4 numbers: [x1, y1, x2, y2, ...]
+ * @param iouThreshold IOU threshold for merging boxes.
+ * @return std::vector<std::vector<double>>
+ */
+std::vector<std::vector<double>> computeNMS(const std::vector<std::vector<double>> &boxList, const double iouThreshold)
+{
+    std::vector<std::vector<double>> result;
+    for (unsigned int i = 0; i < boxList.size(); i++)
+    {
+        const auto &box = boxList[i];
+        const double a1 = computeArea(box);
+        bool discard = false;
+        for (unsigned int j = i + 1; j < boxList.size(); j++)
+        {
+            const auto &box2 = boxList[j];
+            if ((computeIOU(box, box2) > iouThreshold) && (a1 < computeArea(box2)))
+            {
+                discard = true;
+            }
+        }
+        if (!discard)
+            result.push_back(box);
+    }
+    return result;
 }
 
 class Track

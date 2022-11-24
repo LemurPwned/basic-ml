@@ -5,6 +5,7 @@
 
 #include "tracker.hpp"
 #include "rpca.hpp"
+#include "phase.hpp"
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -43,9 +44,15 @@ PYBIND11_MODULE(basic_ml, m)
         .def("getShadowCount", &Track::getShadowCount)
         .def("getId", &Track::getId)
         .def("getDetections", &Track::getDetections);
-
+    tracker_module.def("computeIOU", &computeIOU, "box1"_a.noconvert(), "box2"_a.noconvert());
+    tracker_module.def("computeNMS", &computeNMS, "boxesList"_a.noconvert(), "iouThreshold"_a = 0.9);
     // Monte Carlo module
     py::module monte_carlo_module = m.def_submodule("mc", "Monte Carlo");
+    py::module phase_estimate = m.def_submodule("phase", "Phase Recovery");
+    py::class_<GradientPhaseReconstruction>(phase_estimate, "PhaseRecovery")
+        .def(py::init<double, unsigned int>(),
+             "alpha"_a = 0.1, "maxIter"_a = 1000)
+        .def("run", &GradientPhaseReconstruction::run, "X"_a.noconvert(), "obs"_a.noconvert());
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
