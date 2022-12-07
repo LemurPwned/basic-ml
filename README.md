@@ -30,7 +30,7 @@ python3 -m pip install basic_ml
 ## Contents
 
 - [RPCA](python/rpca.hpp) Robust PCA
-- [Tracker](python/tracker.hpp) Basic IOU tracker
+- [Tracker](python/tracker.hpp) Basic IOU tracker -- read [docs](docs/tracker.md)
 
 ## Usage
 
@@ -40,7 +40,7 @@ import basic_ml
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on dev setup, and the process for submitting pull requests to us.
 
 ## Authors
 
