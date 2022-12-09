@@ -12,8 +12,7 @@ find_package(pybind11 REQUIRED)
 include_directories(${PYBIND11_INCLUDE_DIR})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp
-                    python/phase.hpp)
+pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp)
 
 # TESTING SUITE
 include(FetchContent)
@@ -49,12 +48,12 @@ macro(package_add_test TESTNAME)
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
 endmacro()
 
-package_add_test(test_rpca tests/test_rpca.cpp)
-target_link_libraries(test_rpca Eigen3::Eigen)
-target_link_libraries(test_rpca pybind11::pybind11)
-package_add_test(test_tracker tests/test_tracker.cpp)
-target_link_libraries(test_tracker ${pybind11_LIBRARIES})
-target_link_libraries(test_tracker pybind11::pybind11)
+# package_add_test(test_rpca tests/test_rpca.cpp)
+# target_link_libraries(test_rpca Eigen3::Eigen) target_link_libraries(test_rpca
+# pybind11::pybind11) package_add_test(test_tracker tests/test_tracker.cpp)
+# target_link_libraries(test_tracker ${pybind11_LIBRARIES})
+# target_link_libraries(test_tracker pybind11::pybind11)
+
 # VERSION_INFO is defined by setup.py and passed into the C++ code as a define
 # (VERSION_INFO) here.
 target_compile_definitions(basic_ml PRIVATE VERSION_INFO=${VERSION_INFO})
