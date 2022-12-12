@@ -13,7 +13,7 @@ Currently, the project requires following dependencies:
 ### Mac OS X
 
 ```bash
-brew install cmake eigen pybind11
+brew install cmake eigen pybind11 emscripten
 ```
 
 ### Ubuntu
