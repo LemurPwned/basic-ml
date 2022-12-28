@@ -8,6 +8,7 @@ from bayes_opt import BayesianOptimization
 from tqdm import tqdm
 
 from basic_ml.tracker import Tracker
+from basic_ml.tracker import ByteTracker
 
 ROOT = Path(os.path.dirname(__file__))/Path("../data/MOT16/train/")
 

@@ -3,7 +3,7 @@ import re
 import subprocess
 import sys
 
-from setuptools import Extension, setup, find_namespace_packages
+from setuptools import Extension, find_namespace_packages, setup
 from setuptools.command.build_ext import build_ext
 
 # Convert distutils Windows platform specifiers to CMake -A arguments

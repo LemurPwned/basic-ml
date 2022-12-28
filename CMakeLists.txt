@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4...3.18)
 project(basic_ml LANGUAGES CXX)
 # change to -O2 or -O1 for faster compile times
-add_compile_options(-O3 -Wall -Wextra -Werror)
+add_compile_options(-O3 -Wall -Wextra)
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 20)
 
@@ -12,7 +12,9 @@ find_package(pybind11 REQUIRED)
 include_directories(${PYBIND11_INCLUDE_DIR})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp)
+pybind11_add_module(
+  basic_ml python/module.cpp python/tracker.hpp python/kalman.hpp
+  python/byte.hpp python/third_party/hungarian-algorithm-cpp/Hungarian.h)
 
 # TESTING SUITE
 include(FetchContent)

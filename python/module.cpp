@@ -3,6 +3,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 
+#include "byte.hpp"
 #include "tracker.hpp"
 #include "rpca.hpp"
 #include "phase.hpp"
@@ -44,15 +45,14 @@ PYBIND11_MODULE(basic_ml, m)
         .def("getShadowCount", &Track::getShadowCount)
         .def("getId", &Track::getId)
         .def("getDetections", &Track::getDetections);
+
+    py::class_<ByteTracker>(tracker_module, "ByteTracker")
+        .def(py::init<>())
+        .def("update", &ByteTracker::update, "detections"_a.noconvert());
+
+    py::class_<ByteTrack>(tracker_module, "ByteTrack");
     tracker_module.def("computeIOU", &computeIOU, "box1"_a.noconvert(), "box2"_a.noconvert());
     tracker_module.def("computeNMS", &computeNMS, "boxesList"_a.noconvert(), "iouThreshold"_a = 0.9);
-    // Monte Carlo module
-    py::module monte_carlo_module = m.def_submodule("mc", "Monte Carlo");
-    py::module phase_estimate = m.def_submodule("phase", "Phase Recovery");
-    py::class_<GradientPhaseReconstruction>(phase_estimate, "PhaseRecovery")
-        .def(py::init<double, unsigned int>(),
-             "alpha"_a = 0.1, "maxIter"_a = 1000)
-        .def("run", &GradientPhaseReconstruction::run, "X"_a.noconvert(), "obs"_a.noconvert());
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
