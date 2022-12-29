@@ -2,7 +2,6 @@
 #define BYTE_HPP
 
 #include <vector>
-#include <tuple>
 #include <iostream>
 #include <functional>
 #include <algorithm>

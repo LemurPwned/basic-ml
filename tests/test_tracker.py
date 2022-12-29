@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
-
+from typing import Union
 import motmetrics as mm
 import numpy as np
 import pandas as pd
 from bayes_opt import BayesianOptimization
 from tqdm import tqdm
 
-from basic_ml.tracker import Tracker
+from basic_ml.tracker import IOUTracker
 from basic_ml.tracker import ByteTracker
 
 ROOT = Path(os.path.dirname(__file__))/Path("../data/MOT16/train/")
@@ -17,7 +17,6 @@ Convention here is:
     - x, y, w, h are the bounding box coordinates
     - conf is the confidence score
 """
-
 def read_mot_txt(filename):
     """Read MOT txt file."""
     data = pd.read_csv(filename, sep=',', header=None,
@@ -68,7 +67,26 @@ def score_tracker(gt_hypotheses, tracker_hypotheses):
     return cost_matrix
     
 
-def test_tracker(maxShadowCount=100, minTrackLength=1, iouThreshold=0.646, silent=False):
+def test_iou_tracker(maxShadowCount=100, minTrackLength=1, iouThreshold=0.646, silent=False):
+    """
+    Test IOU tracker performance on MOT16 train set.
+    """
+    return tracker_test_runner(
+        lambda: IOUTracker(maxShadowCount=maxShadowCount, minTrackLength=minTrackLength, iouThreshold=iouThreshold),
+        silent=silent
+    )
+
+def test_byte_tracker(silent=False):
+    """
+    Test Byte tracker performance on MOT16 train set.
+    """
+    return tracker_test_runner(
+        lambda: ByteTracker(),
+        silent=silent
+    )
+
+
+def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], silent=False):
     """
     Test tracker performance on MOT16 train set.
     """
@@ -81,10 +99,8 @@ def test_tracker(maxShadowCount=100, minTrackLength=1, iouThreshold=0.646, silen
         acc = mm.MOTAccumulator(auto_id=True)
         gt = read_mot_txt(filename/'gt'/'gt.txt')
         frames = gt["frame"].max() + 1
-        tracker = Tracker(maxShadowCount=maxShadowCount, minTrackLength=minTrackLength, iouThreshold=iouThreshold)
-        gt_detections, gt_ids = get_box(gt, 1)
-        tracker.init(gt_detections.astype(np.float32).tolist())
-        for frame in tqdm(range(2, frames), desc=f"Processing {filename.name}", disable=silent):
+        tracker = tracker_init()
+        for frame in tqdm(range(1, frames), desc=f"Processing {filename.name}", disable=silent):
             gt_detections, gt_ids = get_box(gt, frame)
             tracker.update(gt_detections.astype(np.float32).tolist())
             tracks = tracker.getActiveTracks()
@@ -113,7 +129,7 @@ def optimise_tracker_performance():
     }
 
     def score_tracker(maxShadowCount, minTrackLength, iouThreshold):
-        summary = test_tracker(maxShadowCount=int(maxShadowCount), 
+        summary = test_iou_tracker(maxShadowCount=int(maxShadowCount), 
         minTrackLength=int(minTrackLength), 
         iouThreshold=iouThreshold, silent=True)
         return summary['motp'].mean()

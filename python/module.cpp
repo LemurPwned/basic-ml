@@ -3,10 +3,9 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 
-#include "byte.hpp"
+// #include "byte.hpp"
 #include "tracker.hpp"
 #include "rpca.hpp"
-#include "phase.hpp"
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -26,7 +25,7 @@ PYBIND11_MODULE(basic_ml, m)
         .def("getS", &RPCA::getS, py::return_value_policy::reference_internal);
 
     py::module tracker_module = m.def_submodule("tracker", "IOU Tracker");
-    py::class_<IOUTracker>(tracker_module, "Tracker")
+    py::class_<IOUTracker>(tracker_module, "IOUTracker")
         .def(py::init<unsigned int, unsigned int, double, double>(),
              "maxShadowCount"_a = 30,
              "minTrackLength"_a = 3,
@@ -50,7 +49,10 @@ PYBIND11_MODULE(basic_ml, m)
         .def(py::init<>())
         .def("update", &ByteTracker::update, "detections"_a.noconvert());
 
-    py::class_<ByteTrack>(tracker_module, "ByteTrack");
+    py::class_<ByteTrack>(tracker_module, "ByteTrack")
+        .def("getLastDetection", &ByteTrack::getLastDetection)
+        .def("getId", &ByteTrack::getId)
+        .def("getDetections", &ByteTrack::getDetections);
     tracker_module.def("computeIOU", &computeIOU, "box1"_a.noconvert(), "box2"_a.noconvert());
     tracker_module.def("computeNMS", &computeNMS, "boxesList"_a.noconvert(), "iouThreshold"_a = 0.9);
 

@@ -14,7 +14,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 pybind11_add_module(
   basic_ml python/module.cpp python/tracker.hpp python/kalman.hpp
-  python/byte.hpp python/third_party/hungarian-algorithm-cpp/Hungarian.h)
+  python/byte.hpp python/third_party/hungarian-algorithm-cpp/hungarian.hpp)
 
 # TESTING SUITE
 include(FetchContent)
