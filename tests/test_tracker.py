@@ -1,14 +1,16 @@
 import os
 from pathlib import Path
 from typing import Union
+
+import cv2
 import motmetrics as mm
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from basic_ml.tracker import IOUTracker
-from basic_ml.tracker import ByteTracker
-from basic_ml.tracker import computeIOU
+# from basic_ml.vis import annotate_frame
+from basic_ml.tracker import ByteTracker, IOUTracker, computeIOU
+
 ROOT = Path(os.path.dirname(__file__))/Path("/Volumes/KINGSTON/data/MOT16/train/")
 
 """
@@ -16,6 +18,24 @@ Convention here is:
     - x, y, w, h are the bounding box coordinates
     - conf is the confidence score
 """
+
+def annotate_frame(frame, tracks):
+    # print(len(tracks))
+    for track in tracks:
+        box = track.getLastDetection()
+        x1, y1, x2, y2, _ = box
+        # print("\t", box)
+        x1 = int(x1)
+        y1 = int(y1)
+        x2 = int(x2)
+        y2 = int(y2)
+
+        frame = cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        frame = cv2.putText(frame, str(track.getId()), (x1, y2), cv2.FONT_HERSHEY_SIMPLEX, 1, 
+                    (0, 255, 0), 2, cv2.LINE_AA)    
+
+    return frame
+
 def read_mot_txt(filename, min_score=0.0):
     """Read MOT txt file."""
     data = pd.read_csv(filename, sep=',', header=None,
@@ -76,15 +96,20 @@ def test_byte_tracker(silent=False):
     )
 
 
-def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], silent=False, det_folder=None, detector_impl=TestDetector, tracker_params={}):
+def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], 
+                        silent=False, det_folder=None, detector_impl=TestDetector, tracker_params={},
+                        vis_folder=None):
     """
     Test tracker performance on MOT16 train set.
     """
     names, acc_list = [], []
     # take a smaller subset of the data for testing
-    mot_range = (9, 10, 11, 13)
+    # mot_range = (9, 10, 11, 13)
+    mot_range = (9, )
     for mot_num in mot_range:
         filename = ROOT / f"MOT16-{mot_num:02d}"
+        if vis_folder:
+            os.makedirs(os.path.join(vis_folder, f"MOT16-{mot_num:02d}"), exist_ok=True)
         if det_folder is None:
             det_folder = "gt/gt.txt"
         detector = detector_impl(filename / det_folder)
@@ -102,6 +127,11 @@ def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], silent=Fal
             cost_matrix = score_tracker(gt_detections, tracker_hypotheses=tracker_dets)
             tracker_ids = [track.getId() for track in tracks]
             acc.update(gt_ids, tracker_ids, cost_matrix.tolist())
+            if vis_folder:
+                FRAME_FOLDER = filename / "img1" / f"{frame:06d}.jpg"
+                img  = cv2.imread(str(FRAME_FOLDER))
+                img = annotate_frame(img, tracks)
+                cv2.imwrite(os.path.join(vis_folder, f"MOT16-{mot_num:02d}", f"{frame:06d}.jpg"), img)
         acc_list.append(acc)
     mh = mm.metrics.create()
     summary = mh.compute_many(
@@ -141,10 +171,18 @@ def optimise_tracker_performance():
     )
 
 if __name__ == "__main__":
-    res = tracker_test_runner(tracker_init=IOUTracker, 
-                            #   det_folder="det/det.txt", 
-                              detector_impl=TestDetector)
-    # res = tracker_test_runner(tracker_init=ByteTracker, 
-    #                           det_folder="det/det.txt", 
+    # res = tracker_test_runner(tracker_init=IOUTracker, 
+    #                         #   det_folder="det/det.txt", 
+    #                           vis_folder='./scratch/IOUTracker',
+    #                           tracker_params={
+    #                                 'maxShadowCount': 0,
+    #                           },
     #                           detector_impl=TestDetector)
+    res = tracker_test_runner(tracker_init=ByteTracker, 
+                            #   det_folder="det/det.txt", 
+                              vis_folder='./scratch/ByteTracker',
+                              tracker_params={
+                                    # 'minConfidenceThreshold': 0.8,
+                              },
+                              detector_impl=TestDetector)
     # optimise_tracker_performance()

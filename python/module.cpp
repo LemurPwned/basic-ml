@@ -35,7 +35,7 @@ PYBIND11_MODULE(basic_ml, m)
         .def("update", &IOUTracker::update, "detections"_a.noconvert())
         .def("getActiveTracks", &IOUTracker::getActiveTracks)
         .def("getActiveTrackIds", &IOUTracker::getActiveTrackIds);
-            py::class_<Track>(tracker_module, "Track")
+    py::class_<Track>(tracker_module, "Track")
         .def(py::init<const std::vector<double> &>())
         .def("getTrackLength", &Track::getTrackLength)
         .def("getLastDetection", &Track::getLastDetection)
@@ -44,7 +44,10 @@ PYBIND11_MODULE(basic_ml, m)
         .def("getDetections", &Track::getDetections);
 
     py::class_<ByteTracker>(tracker_module, "ByteTracker")
-        .def(py::init<>())
+        .def(py::init<double, double, double>(),
+             "IOUMatchThreshold"_a = 0.9,
+             "highConfidenceThreshold"_a = 0.5,
+             "lowConfidenceThreshold"_a = 0.1)
         .def("update", &ByteTracker::update, "detections"_a.noconvert());
 
     py::class_<ByteTrack>(tracker_module, "ByteTrack")

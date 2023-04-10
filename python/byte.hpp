@@ -33,9 +33,14 @@ private:
     GaussParams8d params; // mean, covariance
     unsigned int trackLen = 0;
 
+    // inline static unsigned int trackIDCounter = 0;
+
 public:
     TrackState state = TrackState::New;
-
+    // static unsigned int getNewTrackID()
+    // {
+    //     return trackIDCounter++;
+    // }
     explicit ByteTrack(const Detection &detection) : Track()
     {
         this->activate(detection);
@@ -51,7 +56,7 @@ public:
     }
     void activate(const Detection &detection)
     {
-        this->trackId = Track::getNewTrackID();
+        this->trackId = ByteTrack::getNewTrackID();
         this->detections.push_back(detection);
     }
     void reActivate(const Detection &detection)
@@ -83,18 +88,22 @@ private:
     std::function<double(const Detection &, const Detection &)> simOneFn = computeIOU;
     std::function<double(const Detection &, const Detection &)> simTwoFn = computeIOU;
     std::vector<ByteTrack> activeTracks;
+    double highConfidenceThreshold, lowConfidenceThreshold, IOUMatchThreshold;
 
 public:
-    explicit ByteTracker(double minConfidenceThreshold = 0.5) : IOUTracker(minConfidenceThreshold) {}
-    void lowScoreAssignment(const std::vector<Detection> &boxes,
-                            std::vector<Detection> &lowDets,
-                            std::vector<Detection> &highDets)
+    explicit ByteTracker(double IOUMatchThreshold = 0.9, double highConfidenceThreshold = 0.5, double lowConfidenceThreshold = 0.1) : IOUTracker(lowConfidenceThreshold),
+                                                                                                                                      highConfidenceThreshold(highConfidenceThreshold),
+                                                                                                                                      lowConfidenceThreshold(lowConfidenceThreshold),
+                                                                                                                                      IOUMatchThreshold(IOUMatchThreshold) {}
+    void scoreBasedAssignment(const std::vector<Detection> &boxes,
+                              std::vector<Detection> &lowDets,
+                              std::vector<Detection> &highDets)
     {
         for (const auto &det : boxes)
         {
-            if (det[4] >= this->minConfidenceThreshold)
+            if (det[4] >= this->highConfidenceThreshold)
                 highDets.push_back(det);
-            else if (det[4] > 0.)
+            else if (det[4] > this->lowConfidenceThreshold)
                 lowDets.push_back(det);
         }
     }
@@ -110,7 +119,7 @@ public:
         for (size_t i = 0; i < predTracks.size(); i++)
         {
             for (size_t j = 0; j < dets.size(); j++)
-                costMatrix[i][j] = (1 - simFn(predTracks[i].getLastDetection(), dets[j]));
+                costMatrix[i][j] = (1. - simFn(predTracks[i].getLastDetection(), dets[j]));
         }
         // solve the assignment problem
         HungarianAlgorithm HungAlgo;
@@ -132,7 +141,7 @@ public:
         // fill the list with tracks that are not assigned
         for (size_t assignMentIndx = 0; assignMentIndx < assignment.size(); assignMentIndx++)
         {
-            if (assignment[assignMentIndx] != -1) // -1 is no assignment
+            if ((assignment[assignMentIndx] != -1) && costMatrix[assignMentIndx][assignment[assignMentIndx]] >= this->IOUMatchThreshold) // -1 is no assignment
                 predTracks[assignMentIndx].update(dets[assignment[assignMentIndx]]);
             else
                 unassignedTracks.push_back(predTracks[assignMentIndx]);
@@ -149,7 +158,7 @@ public:
     std::vector<ByteTrack> update(const std::vector<std::vector<double>> &primeDetections)
     {
         std::vector<Detection> lowDets = {}, highDets = {};
-        lowScoreAssignment(primeDetections, lowDets, highDets);
+        scoreBasedAssignment(primeDetections, lowDets, highDets);
         kalmanPredict();
         if (this->activeTracks.size() && highDets.size())
         {
