@@ -3,7 +3,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 
-// #include "byte.hpp"
+#include "byte.hpp"
 #include "tracker.hpp"
 #include "rpca.hpp"
 
@@ -34,11 +34,9 @@ PYBIND11_MODULE(basic_ml, m)
         .def("init", &IOUTracker::init, "detections"_a.noconvert())
         .def("update", &IOUTracker::update, "detections"_a.noconvert())
         .def("getActiveTracks", &IOUTracker::getActiveTracks)
-        .def("getActiveTrackIds", &IOUTracker::getActiveTrackIds)
-        .def("getFinalTracks", &IOUTracker::getFinalTracks);
-    py::class_<Track>(tracker_module, "Track")
+        .def("getActiveTrackIds", &IOUTracker::getActiveTrackIds);
+            py::class_<Track>(tracker_module, "Track")
         .def(py::init<const std::vector<double> &>())
-        .def("getBestTrackScore", &Track::getBestTrackScore)
         .def("getTrackLength", &Track::getTrackLength)
         .def("getLastDetection", &Track::getLastDetection)
         .def("getShadowCount", &Track::getShadowCount)
@@ -51,8 +49,7 @@ PYBIND11_MODULE(basic_ml, m)
 
     py::class_<ByteTrack>(tracker_module, "ByteTrack")
         .def("getLastDetection", &ByteTrack::getLastDetection)
-        .def("getId", &ByteTrack::getId)
-        .def("getDetections", &ByteTrack::getDetections);
+        .def("getId", &ByteTrack::getId);
     tracker_module.def("computeIOU", &computeIOU, "box1"_a.noconvert(), "box2"_a.noconvert());
     tracker_module.def("computeNMS", &computeNMS, "boxesList"_a.noconvert(), "iouThreshold"_a = 0.9);
 

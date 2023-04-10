@@ -177,6 +177,13 @@ protected:
     bool initialised = false;
 
 public:
+    explicit IOUTracker(double minConfidenceThreshold)
+    {
+        this->minConfidenceThreshold = minConfidenceThreshold;
+        this->minTrackLength = 1;
+        this->maxShadowCount = 1;
+        this->iouThreshold = 0.65;
+    };
     explicit IOUTracker(unsigned int maxShadowCount,
                         unsigned int minTrackLength,
                         double iouThreshold,
@@ -267,7 +274,7 @@ public:
         // remove starting from the latest, i.e. largest index of the list!
         for (int k = (int)toEraseIndx.size() - 1; k >= 0; k--)
         {
-            activeTracks.erase(activeTracks.begin() + toEraseIndx[k]);
+           this->activeTracks.erase(this->activeTracks.begin() + toEraseIndx[k]);
         }
     }
 
@@ -283,13 +290,6 @@ public:
     std::vector<Track> getActiveTracks()
     {
         return activeTracks;
-    }
-
-    std::vector<Track> getFinalTracks()
-    {
-        std::copy_if(activeTracks.begin(), activeTracks.end(), std::back_inserter(finishedTracks), [this](const Track &track)
-                     { return track.getTrackLength() >= minTrackLength; });
-        return finishedTracks;
     }
 };
 

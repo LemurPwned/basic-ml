@@ -9,7 +9,7 @@
 
 #include "kalman.hpp"
 #include "tracker.hpp"
-#include "third_party/hungarian-algorithm-cpp/Hungarian.h"
+#include "Hungarian.hpp"
 
 #if defined __GNUC__ || defined __APPLE__
 #include <Eigen/Dense>
@@ -67,38 +67,35 @@ public:
         this->params = this->kalmanFilter.update(this->params.first,
                                                  this->params.second, detection);
         this->state = TrackState::Tracked;
+        this->detections.push_back(detection);
         this->trackLen++;
     }
-    void markLost()
+
+    unsigned int getTrackLength() const
     {
-        this->state = TrackState::Lost;
-    }
-    void markRemoved()
-    {
-        this->state = TrackState::Removed;
+        return this->trackLen;
     }
 };
 
 class ByteTracker : public IOUTracker
 {
-
 private:
     std::function<double(const Detection &, const Detection &)> simOneFn = computeIOU;
     std::function<double(const Detection &, const Detection &)> simTwoFn = computeIOU;
     std::vector<ByteTrack> activeTracks;
 
 public:
-    ByteTracker();
+    explicit ByteTracker(double minConfidenceThreshold = 0.5) : IOUTracker(minConfidenceThreshold) {}
     void lowScoreAssignment(const std::vector<Detection> &boxes,
                             std::vector<Detection> &lowDets,
                             std::vector<Detection> &highDets)
     {
         for (const auto &det : boxes)
         {
-            if (det[4] < this->minConfidenceThreshold)
-                lowDets.push_back(det);
-            else
+            if (det[4] >= this->minConfidenceThreshold)
                 highDets.push_back(det);
+            else if (det[4] > 0.)
+                lowDets.push_back(det);
         }
     }
 
@@ -108,6 +105,7 @@ public:
                                                                                                          const Detection &)>
                                                                                   simFn = computeIOU)
     {
+        // compute the cost matrix
         std::vector<std::vector<double>> costMatrix(predTracks.size(), std::vector<double>(dets.size()));
         for (size_t i = 0; i < predTracks.size(); i++)
         {
@@ -117,6 +115,14 @@ public:
         // solve the assignment problem
         HungarianAlgorithm HungAlgo;
         std::vector<int> assignment;
+        // print the cost matrix
+        // for (size_t i = 0; i < predTracks.size(); i++)
+        // {
+        //     for (size_t j = 0; j < dets.size(); j++)
+        //         std::cout << costMatrix[i][j] << " ";
+        //     std::cout << std::endl;
+        // }
+
         HungAlgo.Solve(costMatrix, assignment);
         // update tracks with high dets
         // assignment is for rows, i.e. tracks
@@ -142,43 +148,67 @@ public:
 
     std::vector<ByteTrack> update(const std::vector<std::vector<double>> &primeDetections)
     {
-        std::vector<Detection> lowDets, highDets;
-        lowScoreAssignment(primeDetections, highDets, lowDets);
+        std::vector<Detection> lowDets = {}, highDets = {};
+        lowScoreAssignment(primeDetections, lowDets, highDets);
         kalmanPredict();
-        auto returnPairAssoc1 = associateTracks(
-            this->activeTracks,
-            highDets,
-            this->simOneFn);
-        const auto returnPairAssoc2 = associateTracks(
-            returnPairAssoc1.first,
-            lowDets,
-            this->simTwoFn);
-
-        // delete unmatched tracks
-        std::vector<unsigned int> toErase;
-        for (auto &track : returnPairAssoc2.first)
+        if (this->activeTracks.size() && highDets.size())
         {
-            const auto it = std::find(this->activeTracks.begin(),
-                                      this->activeTracks.end(), track);
-            // push INDEX of the track in the activeTracks vector
-            if (it != this->activeTracks.end())
+            auto returnPairAssoc1 = associateTracks(
+                this->activeTracks,
+                highDets,
+                this->simOneFn);
+            if (returnPairAssoc1.first.size() && lowDets.size())
             {
-                const std::size_t index = std::distance(this->activeTracks.begin(), it);
-                toErase.push_back((int)index);
-            }
-            else
-            {
-                std::runtime_error("Track not found in activeTracks");
+                auto returnPairAssoc2 = associateTracks(
+                    returnPairAssoc1.first,
+                    lowDets,
+                    this->simTwoFn);
+
+                // delete unmatched tracks
+                std::vector<unsigned int> toErase;
+                for (auto &track : returnPairAssoc2.first)
+                {
+                    const auto it = std::find(this->activeTracks.begin(),
+                                              this->activeTracks.end(), track);
+                    // push INDEX of the track in the activeTracks vector
+                    if (it != this->activeTracks.end())
+                    {
+                        const std::size_t index = std::distance(this->activeTracks.begin(), it);
+                        toErase.push_back((int)index);
+                    }
+                    else
+                    {
+                        std::runtime_error("Track not found in activeTracks");
+                    }
+                }
+                // update active Tracks
+                this->eraseTracks(toErase);
+                // create new tracks from the unmatched detections
+                for (const auto &det : returnPairAssoc2.second)
+                    this->activeTracks.push_back(ByteTrack(det));
             }
         }
-        // update active Tracks
-        eraseTracks(toErase);
-        // create new tracks from the unmatched detections
-        for (const auto &det : returnPairAssoc2.second)
-            this->activeTracks.push_back(ByteTrack(det));
-
+        else
+        {
+            // drop low confidence detections if there are no active tracks
+            // create new tracks from the unmatched detections
+            for (const auto &det : highDets)
+                this->activeTracks.push_back(ByteTrack(det));
+        }
         return this->activeTracks;
     };
+
+    void eraseTracks(std::vector<unsigned int> &toEraseIndx)
+    {
+        // ascending sort
+        std::sort(toEraseIndx.begin(), toEraseIndx.end());
+        // remove cutoff tracks before adding new ones
+        // remove starting from the latest, i.e. largest index of the list!
+        for (int k = (int)toEraseIndx.size() - 1; k >= 0; k--)
+        {
+            this->activeTracks.erase(this->activeTracks.begin() + toEraseIndx[k]);
+        }
+    }
 
     void kalmanPredict()
     {
@@ -186,6 +216,11 @@ public:
         {
             track.predict();
         }
+    }
+
+    std::vector<ByteTrack> getActiveTracks()
+    {
+        return this->activeTracks;
     }
 };
 

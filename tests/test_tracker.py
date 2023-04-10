@@ -4,31 +4,36 @@ from typing import Union
 import motmetrics as mm
 import numpy as np
 import pandas as pd
-from bayes_opt import BayesianOptimization
 from tqdm import tqdm
 
 from basic_ml.tracker import IOUTracker
 from basic_ml.tracker import ByteTracker
-
-ROOT = Path(os.path.dirname(__file__))/Path("../data/MOT16/train/")
+from basic_ml.tracker import computeIOU
+ROOT = Path(os.path.dirname(__file__))/Path("/Volumes/KINGSTON/data/MOT16/train/")
 
 """
 Convention here is:
     - x, y, w, h are the bounding box coordinates
     - conf is the confidence score
 """
-def read_mot_txt(filename):
+def read_mot_txt(filename, min_score=0.0):
     """Read MOT txt file."""
     data = pd.read_csv(filename, sep=',', header=None,
     names=[
          "frame", "id", "x", "y", "w", "h", "conf", "x3d", "y3d", "z3d"
     ])
-    data = data.loc[data['conf'] == 1]
+    data.sort_values(by=["frame", "id"], inplace=True)
+    data = data.loc[data['conf'] > min_score]
     return data
 
 def get_box(data, frame):
     box_data = data.loc[data["frame"] == frame]
-    return box_data[["x", "y", "w", "h", "conf"]].values, box_data["id"].values
+    bbox= box_data[["x", "y", "w", "h", "conf"]].values 
+    id_val = box_data["id"].values
+    bbox = np.asarray([
+        [x[0], x[1], x[0] + x[2], x[1] + x[3], x[4]] for x in bbox
+    ])
+    return bbox, id_val
 
 class TestDetector:
     def __init__(self, detection_root) -> None:
@@ -36,23 +41,8 @@ class TestDetector:
         self.detections = read_mot_txt(self.detection_root)
 
     def detect(self, frame_i):
-        return get_box(self.detections, frame_i)
-
-def iou(bbox1, bbox2):
-    """
-    Compute the intersection over union of two bounding boxes.
-    """
-    # Compute intersection
-    x1 = max(bbox1[0], bbox2[0])
-    y1 = max(bbox1[1], bbox2[1])
-    x2 = min(bbox1[0] + bbox1[2], bbox2[0] + bbox2[2])
-    y2 = min(bbox1[1] + bbox1[3], bbox2[1] + bbox2[3])
-    intersection = max(x2 - x1, 0) * max(y2 - y1, 0)
-    # Compute union
-    union = bbox1[2] * bbox1[3] + bbox2[2] * bbox2[3] - intersection
-    # Compute IoU
-    iou = intersection / union
-    return iou
+        box, _ = get_box(self.detections, frame_i)
+        return box
 
 def score_tracker(gt_hypotheses, tracker_hypotheses):
     """
@@ -62,7 +52,7 @@ def score_tracker(gt_hypotheses, tracker_hypotheses):
     cost_matrix = np.zeros((len(gt_hypotheses), len(tracker_hypotheses)))
     for i, gt_hypothesis in enumerate(gt_hypotheses):
         for j, tracker_hypothesis in enumerate(tracker_hypotheses):
-            cost_matrix[i, j] = 1. - iou(gt_hypothesis, tracker_hypothesis)
+            cost_matrix[i, j] = 1. - computeIOU(gt_hypothesis, tracker_hypothesis)
 
     return cost_matrix
     
@@ -86,7 +76,7 @@ def test_byte_tracker(silent=False):
     )
 
 
-def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], silent=False):
+def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], silent=False, det_folder=None, detector_impl=TestDetector, tracker_params={}):
     """
     Test tracker performance on MOT16 train set.
     """
@@ -95,15 +85,19 @@ def tracker_test_runner(tracker_init: Union[IOUTracker, ByteTracker], silent=Fal
     mot_range = (9, 10, 11, 13)
     for mot_num in mot_range:
         filename = ROOT / f"MOT16-{mot_num:02d}"
+        if det_folder is None:
+            det_folder = "gt/gt.txt"
+        detector = detector_impl(filename / det_folder)
         names.append(filename.name)
         acc = mm.MOTAccumulator(auto_id=True)
         gt = read_mot_txt(filename/'gt'/'gt.txt')
         frames = gt["frame"].max() + 1
-        tracker = tracker_init()
+        tracker = tracker_init(**tracker_params)
         for frame in tqdm(range(1, frames), desc=f"Processing {filename.name}", disable=silent):
             gt_detections, gt_ids = get_box(gt, frame)
-            tracker.update(gt_detections.astype(np.float32).tolist())
-            tracks = tracker.getActiveTracks()
+            gt_detections = gt_detections.astype(np.float32).tolist()
+            detections = detector.detect(frame).astype(np.float32).tolist()
+            tracks = tracker.update(detections)
             tracker_dets = [track.getLastDetection() for track in tracks]
             cost_matrix = score_tracker(gt_detections, tracker_hypotheses=tracker_dets)
             tracker_ids = [track.getId() for track in tracks]
@@ -122,6 +116,8 @@ def optimise_tracker_performance():
     """
     Run optimisation to find best tracker parameters.
     """
+    from bayes_opt import BayesianOptimization
+
     opt_bounds = {
         'maxShadowCount': (0, 100),
         'minTrackLength': (0, 10),
@@ -145,5 +141,10 @@ def optimise_tracker_performance():
     )
 
 if __name__ == "__main__":
-    sum = test_tracker()
+    res = tracker_test_runner(tracker_init=IOUTracker, 
+                            #   det_folder="det/det.txt", 
+                              detector_impl=TestDetector)
+    # res = tracker_test_runner(tracker_init=ByteTracker, 
+    #                           det_folder="det/det.txt", 
+    #                           detector_impl=TestDetector)
     # optimise_tracker_performance()

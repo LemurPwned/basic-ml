@@ -27,6 +27,12 @@ and then run the following command:
 python3 -m pip install basic_ml
 ```
 
+### Macs with M1
+
+```bash
+arch -arm64 python3 -m pip install basic_ml
+```
+
 ## Contents
 
 - [RPCA](python/rpca.hpp) Robust PCA

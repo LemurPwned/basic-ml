@@ -42,8 +42,6 @@ std::vector<double> detection2KalmanParams(const std::vector<double> &detection)
 class KalmanFilterTracker
 {
 private:
-    // unsigned int dynamicParams = 4; // x, y
-    // unsigned int timSteps = 1;
     double dt = 1.;
     CovMatrix8d motionMatrix = CovMatrix8d::Identity();
     Eigen::Matrix<double, 4, 8> updateMatrix = Eigen::Matrix<double, 4, 8>::Identity();
@@ -126,7 +124,6 @@ public:
         GaussParams4d params = this->project(mean, covarianceMatrix);
         Eigen::LLT<CovMatrix4d> luSolver;
         const auto b = (covarianceMatrix * this->updateMatrix.transpose()).transpose();
-        // luSolver.compute(params.second);
         const auto kalmanGain = luSolver.compute(params.second).solve(b);
         const ParamVector4d innovation = measurementVec - params.first;
         const ParamVector8d newMean = mean + (innovation * kalmanGain);
