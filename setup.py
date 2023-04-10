@@ -3,7 +3,7 @@ import re
 import subprocess
 import sys
 
-from setuptools import Extension, find_namespace_packages, find_packages, setup
+from setuptools import Extension, find_namespace_packages, setup
 from setuptools.command.build_ext import build_ext
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
@@ -134,15 +134,15 @@ setup(
     name="basic_ml",
     version="0.1.0",
     author="LemurPwned",
+    url="https://github.com/LemurPwned/basic_ml",
     author_email="lemurpwned@gmail.com",
-    description="Library for basic ML in C++ with Python bindings",
+    description="Library for basic ML in C++ with Python/JS bindings",
     long_description="",
     ext_modules=[CMakeExtension("basic_ml")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
     python_requires=">=3.6",
-    #  packages=find_namespace_packages(include=["basic_ml.*"]),
-    # packages=find_packages(),
+    packages=find_namespace_packages(include=["basic_ml.*"]),
     include_package_data=True,
     package_data={"basic_ml": ["py.typed", "*.pyi"]},
 )

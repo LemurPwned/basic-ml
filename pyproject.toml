@@ -11,8 +11,5 @@ build-backend = "setuptools.build_meta"
 name = "basic_ml"
 version = "0.0.1"
 
-[tool.setuptools.packages]
-find = {}
-
 [tool.isort]
 profile = "black"

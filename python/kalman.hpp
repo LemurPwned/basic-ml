@@ -21,8 +21,7 @@ typedef Eigen::Matrix<double, 1, 4> ParamVector4d; // col vector
 typedef Eigen::Matrix<double, 1, 8> ParamVector8d; // col vector
 typedef Eigen::Matrix<double, 4, 4> CovMatrix4d;
 typedef Eigen::Matrix<double, 8, 8> CovMatrix8d;
-// typedef std::tuple<ParamVector8d, CovMatrix8d> GaussParams8d;
-// typedef std::tuple<ParamVector4d, CovMatrix4d> GaussParams4d;
+
 typedef std::pair<ParamVector8d, CovMatrix8d> GaussParams8d;
 typedef std::pair<ParamVector4d, CovMatrix4d> GaussParams4d;
 

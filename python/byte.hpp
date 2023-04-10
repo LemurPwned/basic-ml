@@ -33,14 +33,9 @@ private:
     GaussParams8d params; // mean, covariance
     unsigned int trackLen = 0;
 
-    // inline static unsigned int trackIDCounter = 0;
-
 public:
     TrackState state = TrackState::New;
-    // static unsigned int getNewTrackID()
-    // {
-    //     return trackIDCounter++;
-    // }
+
     explicit ByteTrack(const Detection &detection) : Track()
     {
         this->activate(detection);
@@ -91,10 +86,11 @@ private:
     double highConfidenceThreshold, lowConfidenceThreshold, IOUMatchThreshold;
 
 public:
-    explicit ByteTracker(double IOUMatchThreshold = 0.9, double highConfidenceThreshold = 0.5, double lowConfidenceThreshold = 0.1) : IOUTracker(lowConfidenceThreshold),
-                                                                                                                                      highConfidenceThreshold(highConfidenceThreshold),
-                                                                                                                                      lowConfidenceThreshold(lowConfidenceThreshold),
-                                                                                                                                      IOUMatchThreshold(IOUMatchThreshold) {}
+    explicit ByteTracker(double IOUMatchThreshold = 0.9, double highConfidenceThreshold = 0.5,
+                         double lowConfidenceThreshold = 0.1) : IOUTracker(lowConfidenceThreshold),
+                                                                highConfidenceThreshold(highConfidenceThreshold),
+                                                                lowConfidenceThreshold(lowConfidenceThreshold),
+                                                                IOUMatchThreshold(IOUMatchThreshold) {}
     void scoreBasedAssignment(const std::vector<Detection> &boxes,
                               std::vector<Detection> &lowDets,
                               std::vector<Detection> &highDets)

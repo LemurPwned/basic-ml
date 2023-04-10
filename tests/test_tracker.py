@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-# from basic_ml.vis import annotate_frame
+from basic_ml.eval import read_mot_txt, get_box
+from basic_ml.vis import annotate_frame
 from basic_ml.tracker import ByteTracker, IOUTracker, computeIOU
 
 ROOT = Path(os.path.dirname(__file__))/Path("/Volumes/KINGSTON/data/MOT16/train/")
@@ -18,43 +19,6 @@ Convention here is:
     - x, y, w, h are the bounding box coordinates
     - conf is the confidence score
 """
-
-def annotate_frame(frame, tracks):
-    # print(len(tracks))
-    for track in tracks:
-        box = track.getLastDetection()
-        x1, y1, x2, y2, _ = box
-        # print("\t", box)
-        x1 = int(x1)
-        y1 = int(y1)
-        x2 = int(x2)
-        y2 = int(y2)
-
-        frame = cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        frame = cv2.putText(frame, str(track.getId()), (x1, y2), cv2.FONT_HERSHEY_SIMPLEX, 1, 
-                    (0, 255, 0), 2, cv2.LINE_AA)    
-
-    return frame
-
-def read_mot_txt(filename, min_score=0.0):
-    """Read MOT txt file."""
-    data = pd.read_csv(filename, sep=',', header=None,
-    names=[
-         "frame", "id", "x", "y", "w", "h", "conf", "x3d", "y3d", "z3d"
-    ])
-    data.sort_values(by=["frame", "id"], inplace=True)
-    data = data.loc[data['conf'] > min_score]
-    return data
-
-def get_box(data, frame):
-    box_data = data.loc[data["frame"] == frame]
-    bbox= box_data[["x", "y", "w", "h", "conf"]].values 
-    id_val = box_data["id"].values
-    bbox = np.asarray([
-        [x[0], x[1], x[0] + x[2], x[1] + x[3], x[4]] for x in bbox
-    ])
-    return bbox, id_val
-
 class TestDetector:
     def __init__(self, detection_root) -> None:
         self.detection_root = detection_root 
@@ -179,7 +143,7 @@ if __name__ == "__main__":
     #                           },
     #                           detector_impl=TestDetector)
     res = tracker_test_runner(tracker_init=ByteTracker, 
-                            #   det_folder="det/det.txt", 
+                              det_folder="det/det.txt", 
                               vis_folder='./scratch/ByteTracker',
                               tracker_params={
                                     # 'minConfidenceThreshold': 0.8,

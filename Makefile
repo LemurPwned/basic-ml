@@ -23,6 +23,7 @@ cmake:
     cmake -S . -B build
     cmake --build build
     cd build && ctest --rerun-failed --output-on-failure
+
 .PHONY: docker
 docker:
     docker build -t ml .
@@ -31,5 +32,5 @@ docker:
 install:
     rm -rf build/ *.so
     arch -arm64 python3 -m pip install --no-cache-dir --ignore-installed --force-reinstall -e .
-    python -c "from basic_ml.tracker import ByteTracker"
-    python -c "from basic_ml.vis import annotate_frame"
+    python3 -c "from basic_ml.tracker import ByteTracker"
+    python3 -c "from basic_ml.vis import annotate_frame"
