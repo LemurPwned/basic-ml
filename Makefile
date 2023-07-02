@@ -4,7 +4,6 @@ CPP_SRC="./python"
 INCLUDE_PATH="/usr/local/include"
 LVL="-O3"
 
-all: cpp jsbind
 library: cpp
 	emcc -s EXPORT_NAME="'libml'" -lembind $(LVL) -o $(SRC)/$(LIBNAME).js -Wl,--whole-archive $(SRC)/$(LIBNAME).a -Wl,--no-whole-archive
 	cp -r $(SRC)/*.{js,wasm} ./demo/$(SRC)/

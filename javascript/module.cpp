@@ -6,10 +6,6 @@ using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(basic_ml)
 {
-    // emscripten requires to register vectors explicitly
-    register_vector<double>("DoubleVector");
-    register_vector<std::vector<double>>("DoubleDoubleVector");
-    register_vector<std::vector<Track>>("TrackVector");
     class_<RPCA>("RPCA")
         .constructor<unsigned int, double>()
         .function("run", &RPCA::run)
@@ -31,4 +27,10 @@ EMSCRIPTEN_BINDINGS(basic_ml)
         .function("getShadowCount", &Track::getShadowCount)
         .function("getId", &Track::getId)
         .function("getDetections", &Track::getDetections);
+
+    // emscripten requires to register vectors explicitly
+    register_vector<double>("DoubleVector");
+    register_vector<std::vector<double>>("DoubleDoubleVector");
+    register_vector<Track>("TrackVector");
+    register_vector<std::vector<Track>>("TrackVector2D");
 }

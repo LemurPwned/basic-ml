@@ -38,7 +38,6 @@
           let tracker = new libml.Tracker(1, 2, 0.6, 0.3);
           console.log(libml);
           cv["onRuntimeInitialized"] = () => {
-            console.log("DONE");
             console.log(tracker);
             startStreaming(tracker);
           };

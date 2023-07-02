@@ -1,9 +1,7 @@
 function xyxyBoxes2trackerBoxes(bboxes) {
     let trackerVec = new Module.DoubleDoubleVector();
     for (let i = 0; i < bboxes.length; i++) {
-        // let det = new Module.DoubleVector();
         const det = new Module.DoubleVector();
-        console.log(bboxes[i].bbox)
         det.push_back(bboxes[i].bbox[0]);
         det.push_back(bboxes[i].bbox[1]);
         det.push_back(bboxes[i].bbox[2]);
@@ -33,7 +31,6 @@ async function startStreaming(tracker) {
             }
             let begin = Date.now();
             // start processing.
-
             cap.read(src);
             cv.cvtColor(src, dst, cv.COLOR_RGBA2RGB);
             const tensor = tf.tensor(dst.data, [dst.rows, dst.cols, 3], 'int32')
@@ -41,12 +38,13 @@ async function startStreaming(tracker) {
             predictions.forEach(prediction => {
                 prediction.bbox = xywh2xyxy(prediction.bbox)
             })
-            plotDetections(dst, predictions);
             let trackerInput = xyxyBoxes2trackerBoxes(predictions);
-            console.log(trackerInput);
-            console.log("DONE")
             let tracks = tracker.update(trackerInput);
+            plotTracks(dst, tracks);
+
             cv.imshow('canvasOutput', dst);
+            trackerInput.delete();
+            tracks.delete();
             // schedule the next one.
             let delay = 1000 / FPS - (Date.now() - begin);
             setTimeout(processVideo, delay);

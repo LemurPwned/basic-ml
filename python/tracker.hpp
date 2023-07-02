@@ -91,17 +91,17 @@ protected:
     double maxScore = 0.0;
     unsigned int shadowCount = 0;
     unsigned int trackId;
-    inline static unsigned int trackIDCounter = 0;
+    // inline static unsigned int trackIDCounter = 0;
 
 public:
-    static unsigned int getNewTrackID()
-    {
-        return trackIDCounter++;
-    }
+    // static unsigned int getNewTrackID()
+    // {
+    //     return trackIDCounter++;
+    // }
 
-    explicit Track()
+    explicit Track(unsigned int trackId = 0) : trackId(trackId)
     {
-        this->trackId = getNewTrackID();
+        // this->trackId = getNewTrackID();
     }
 
     explicit Track(const std::vector<double> &box, unsigned int trackId = 0) : trackId(trackId)
