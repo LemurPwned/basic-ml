@@ -9,7 +9,7 @@ EMSCRIPTEN_BINDINGS(basic_ml)
     // emscripten requires to register vectors explicitly
     register_vector<double>("DoubleVector");
     register_vector<std::vector<double>>("DoubleDoubleVector");
-    reigster_vector<std::vector<Track>>("TrackVector");
+    register_vector<std::vector<Track>>("TrackVector");
     class_<RPCA>("RPCA")
         .constructor<unsigned int, double>()
         .function("run", &RPCA::run)
@@ -21,8 +21,7 @@ EMSCRIPTEN_BINDINGS(basic_ml)
         .function("init", &IOUTracker::init)
         .function("update", &IOUTracker::update)
         .function("getActiveTracks", &IOUTracker::getActiveTracks)
-        .function("getActiveTrackIds", &IOUTracker::getActiveTrackIds)
-        .function("getFinalTracks", &IOUTracker::getFinalTracks);
+        .function("getActiveTrackIds", &IOUTracker::getActiveTrackIds);
 
     class_<Track>("Track")
         .constructor<const std::vector<double> &>()

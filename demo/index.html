@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"
+  ></script>
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.0.2"
+  ></script>
+  <script defer src="https://docs.opencv.org/4.5.4/opencv.js"></script>
+  <script defer src="utils.js"></script>
+  <script defer src="track_demo.js"></script>
+  <script defer src="javascript/libml.js"></script>
+  <div style="border: thin solid black">
+    <center>
+      <h2>Tracking demo</h2>
+      <p id="status">Demo loading...</p>
+      <div>
+        <div class="row-align">
+          <video
+            id="videoInput"
+            src="./video/MOT16-09.mp4"
+            autoplay="true"
+            muted
+            width="320"
+            height="240"
+          ></video>
+          <canvas id="canvasOutput" width="320" height="240"></canvas>
+        </div>
+      </div>
+    </center>
+
+    <script>
+      var libml = {
+        onRuntimeInitialized: function () {
+          console.log("Tracker loaded");
+          let tracker = new libml.Tracker(1, 2, 0.6, 0.3);
+          console.log(libml);
+          cv["onRuntimeInitialized"] = () => {
+            console.log("DONE");
+            console.log(tracker);
+            startStreaming(tracker);
+          };
+        },
+      };
+    </script>
+  </div>
+</html>
