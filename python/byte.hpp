@@ -120,13 +120,6 @@ public:
         // solve the assignment problem
         HungarianAlgorithm HungAlgo;
         std::vector<int> assignment;
-        // print the cost matrix
-        // for (size_t i = 0; i < predTracks.size(); i++)
-        // {
-        //     for (size_t j = 0; j < dets.size(); j++)
-        //         std::cout << costMatrix[i][j] << " ";
-        //     std::cout << std::endl;
-        // }
 
         HungAlgo.Solve(costMatrix, assignment);
         // update tracks with high dets
@@ -151,7 +144,7 @@ public:
         return std::pair<std::vector<ByteTrack>, std::vector<Detection>>(unassignedTracks, unassignedDets);
     }
 
-    std::vector<ByteTrack> update(const std::vector<std::vector<double>> &primeDetections)
+    std::vector<ByteTrack> update(const std::vector<Detection> &primeDetections)
     {
         std::vector<Detection> lowDets = {}, highDets = {};
         scoreBasedAssignment(primeDetections, lowDets, highDets);

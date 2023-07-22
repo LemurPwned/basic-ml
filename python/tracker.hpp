@@ -5,7 +5,8 @@
 #include <iostream>
 
 // define detection datatype
-// typedef std::vector<double> std::vector<double>;
+
+typedef std::vector<double> Detection;
 /**
  * @brief Compute Intersection Over Union
  * Returns IOU of two bounding boxes.
@@ -14,7 +15,7 @@
  * @return double
  */
 double
-computeIOU(const std::vector<double> &box1, const std::vector<double> &box2)
+computeIOU(const Detection &box1, const Detection &box2)
 {
     const double x1 = std::max(box1[0], box2[0]);
     const double y1 = std::max(box1[1], box2[1]);
@@ -31,7 +32,7 @@ computeIOU(const std::vector<double> &box1, const std::vector<double> &box2)
     return iou;
 }
 
-double featureSimilarityManhattan(const std::vector<double> &a, const std::vector<double> &b)
+double featureSimilarityManhattan(const Detection &a, const Detection &b)
 {
     double sum = 0.0;
     for (unsigned int i = 0; i < a.size(); i++)
@@ -40,7 +41,7 @@ double featureSimilarityManhattan(const std::vector<double> &a, const std::vecto
     }
     return sum;
 }
-double featureSimilarityCosine(const std::vector<double> &a, const std::vector<double> &b)
+double featureSimilarityCosine(const Detection &a, const Detection &b)
 {
     double sum = 0.0;
     for (unsigned int i = 0; i < a.size(); i++)
@@ -50,7 +51,7 @@ double featureSimilarityCosine(const std::vector<double> &a, const std::vector<d
     return (sum + 1) / 2;
 }
 
-double computeArea(const std::vector<double> &box)
+double computeArea(const Detection &box)
 {
     return (box[2] - box[0] + 1) * (box[3] - box[1] + 1);
 }
@@ -62,9 +63,9 @@ double computeArea(const std::vector<double> &box)
  * @param iouThreshold IOU threshold for merging boxes.
  * @return std::vector<std::vector<double>>
  */
-std::vector<std::vector<double>> computeNMS(const std::vector<std::vector<double>> &boxList, const double iouThreshold)
+std::vector<Detection> computeNMS(const std::vector<Detection> &boxList, const double iouThreshold)
 {
-    std::vector<std::vector<double>> result;
+    std::vector<Detection> result;
     for (unsigned int i = 0; i < boxList.size(); i++)
     {
         const auto &box = boxList[i];
@@ -87,36 +88,36 @@ std::vector<std::vector<double>> computeNMS(const std::vector<std::vector<double
 class Track
 {
 protected:
-    std::vector<std::vector<double>> detections;
+    std::vector<Detection> detections;
     double maxScore = 0.0;
     unsigned int shadowCount = 0;
     unsigned int trackId;
-    // inline static unsigned int trackIDCounter = 0;
+    inline static unsigned int trackIDCounter = 0;
 
 public:
-    // static unsigned int getNewTrackID()
-    // {
-    //     return trackIDCounter++;
-    // }
+    static unsigned int getNewTrackID()
+    {
+        return trackIDCounter++;
+    }
 
     explicit Track(unsigned int trackId = 0) : trackId(trackId)
     {
-        // this->trackId = getNewTrackID();
+        this->trackId = getNewTrackID();
     }
 
-    explicit Track(const std::vector<double> &box, unsigned int trackId = 0) : trackId(trackId)
+    explicit Track(const Detection &box, unsigned int trackId = 0) : trackId(trackId)
     {
         detections.push_back(box);
         if (box[4] > maxScore)
             maxScore = box[4];
     }
 
-    std::vector<std::vector<double>> getDetections() const
+    std::vector<Detection> getDetections() const
     {
         return detections;
     }
 
-    std::vector<double> getLastDetection() const
+    Detection getLastDetection() const
     {
         if (detections.size() > 0)
             return detections[detections.size() - 1];
@@ -134,7 +135,7 @@ public:
         shadowCount++;
     }
 
-    void addDetection(const std::vector<double> &box)
+    void addDetection(const Detection &box)
     {
         detections.push_back(box);
     }
@@ -192,7 +193,7 @@ public:
                                                          iouThreshold(iouThreshold),
                                                          minConfidenceThreshold(minConfidenceThreshold) {}
 
-    void init(const std::vector<std::vector<double>> &primeDetections)
+    void init(const std::vector<Detection> &primeDetections)
     {
         activeTracks.clear();
         finishedTracks.clear();
@@ -207,7 +208,7 @@ public:
     }
 
     // pass by copy here
-    std::vector<Track> update(const std::vector<std::vector<double>> &primeDetections)
+    std::vector<Track> update(const std::vector<Detection> &primeDetections)
     {
         if (!initialised)
         {
@@ -215,12 +216,12 @@ public:
             initialised = true;
             return this->activeTracks;
         }
-        std::vector<std::vector<double>> detections = primeDetections;
+        std::vector<Detection> detections = primeDetections;
         std::vector<unsigned int> toErase; // holds indices of active tracks to erase
         for (size_t t = 0; t < activeTracks.size(); t++)
         {
             double bestIOU = 0.0;
-            std::vector<double> bestBox;
+            Detection bestBox;
             // iterator
             int bestIndex = -1;
             for (size_t i = 0; i < detections.size(); i++)
@@ -274,7 +275,7 @@ public:
         // remove starting from the latest, i.e. largest index of the list!
         for (int k = (int)toEraseIndx.size() - 1; k >= 0; k--)
         {
-           this->activeTracks.erase(this->activeTracks.begin() + toEraseIndx[k]);
+            this->activeTracks.erase(this->activeTracks.begin() + toEraseIndx[k]);
         }
     }
 
