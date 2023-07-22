@@ -4,15 +4,20 @@ project(basic_ml LANGUAGES CXX)
 add_compile_options(-O3 -Wall -Wextra -Werror)
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 20)
-
 # EXTRA INCLUDE PKGs
 find_package(Python COMPONENTS Interpreter Development)
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(pybind11 REQUIRED)
 include_directories(${PYBIND11_INCLUDE_DIR})
 include_directories(${EIGEN3_INCLUDE_DIR})
+set(INCLUDE_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/python
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/third_party/hungarian-algorithm-cpp)
 
-pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp)
+include_directories(${INCLUDE_DIR})
+
+pybind11_add_module(basic_ml python/module.cpp python/tracker.hpp
+                    python/kalman.hpp python/byte.hpp python/Hungarian.hpp)
 
 # TESTING SUITE
 include(FetchContent)
@@ -48,11 +53,14 @@ macro(package_add_test TESTNAME)
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
 endmacro()
 
+package_add_test(test_tracker tests/test_tracker.cpp)
 # package_add_test(test_rpca tests/test_rpca.cpp)
 # target_link_libraries(test_rpca Eigen3::Eigen) target_link_libraries(test_rpca
 # pybind11::pybind11) package_add_test(test_tracker tests/test_tracker.cpp)
-# target_link_libraries(test_tracker ${pybind11_LIBRARIES})
-# target_link_libraries(test_tracker pybind11::pybind11)
+target_link_libraries(test_tracker ${pybind11_LIBRARIES})
+target_link_libraries(test_tracker pybind11::pybind11 Eigen3::Eigen)
+# target_link_libraries(test_tracker
+# python/third_party/hungarian-algorithm-cpp/Hungarian1.h)
 
 # VERSION_INFO is defined by setup.py and passed into the C++ code as a define
 # (VERSION_INFO) here.

@@ -4,6 +4,9 @@
 #include <vector>
 #include <iostream>
 
+// define detection datatype
+
+typedef std::vector<double> Detection;
 /**
  * @brief Compute Intersection Over Union
  * Returns IOU of two bounding boxes.
@@ -11,7 +14,8 @@
  * @param box2
  * @return double
  */
-double computeIOU(const std::vector<double> &box1, const std::vector<double> &box2)
+double
+computeIOU(const Detection &box1, const Detection &box2)
 {
     const double x1 = std::max(box1[0], box2[0]);
     const double y1 = std::max(box1[1], box2[1]);
@@ -28,7 +32,26 @@ double computeIOU(const std::vector<double> &box1, const std::vector<double> &bo
     return iou;
 }
 
-double computeArea(const std::vector<double> &box)
+double featureSimilarityManhattan(const Detection &a, const Detection &b)
+{
+    double sum = 0.0;
+    for (unsigned int i = 0; i < a.size(); i++)
+    {
+        sum += std::abs(a[i] - b[i]);
+    }
+    return sum;
+}
+double featureSimilarityCosine(const Detection &a, const Detection &b)
+{
+    double sum = 0.0;
+    for (unsigned int i = 0; i < a.size(); i++)
+    {
+        sum += a[i] * b[i];
+    }
+    return (sum + 1) / 2;
+}
+
+double computeArea(const Detection &box)
 {
     return (box[2] - box[0] + 1) * (box[3] - box[1] + 1);
 }
@@ -40,9 +63,9 @@ double computeArea(const std::vector<double> &box)
  * @param iouThreshold IOU threshold for merging boxes.
  * @return std::vector<std::vector<double>>
  */
-std::vector<std::vector<double>> computeNMS(const std::vector<std::vector<double>> &boxList, const double iouThreshold)
+std::vector<Detection> computeNMS(const std::vector<Detection> &boxList, const double iouThreshold)
 {
-    std::vector<std::vector<double>> result;
+    std::vector<Detection> result;
     for (unsigned int i = 0; i < boxList.size(); i++)
     {
         const auto &box = boxList[i];
@@ -64,26 +87,37 @@ std::vector<std::vector<double>> computeNMS(const std::vector<std::vector<double
 
 class Track
 {
-private:
-    std::vector<std::vector<double>> detections;
+protected:
+    std::vector<Detection> detections;
     double maxScore = 0.0;
     unsigned int shadowCount = 0;
     unsigned int trackId;
+    inline static unsigned int trackIDCounter = 0;
 
 public:
-    explicit Track(const std::vector<double> &box, unsigned int trackId = 0) : trackId(trackId)
+    static unsigned int getNewTrackID()
+    {
+        return trackIDCounter++;
+    }
+
+    explicit Track(unsigned int trackId = 0) : trackId(trackId)
+    {
+        this->trackId = getNewTrackID();
+    }
+
+    explicit Track(const Detection &box, unsigned int trackId = 0) : trackId(trackId)
     {
         detections.push_back(box);
         if (box[4] > maxScore)
             maxScore = box[4];
     }
 
-    std::vector<std::vector<double>> getDetections() const
+    std::vector<Detection> getDetections() const
     {
         return detections;
     }
 
-    std::vector<double> getLastDetection() const
+    Detection getLastDetection() const
     {
         if (detections.size() > 0)
             return detections[detections.size() - 1];
@@ -101,7 +135,7 @@ public:
         shadowCount++;
     }
 
-    void addDetection(const std::vector<double> &box)
+    void addDetection(const Detection &box)
     {
         detections.push_back(box);
     }
@@ -120,20 +154,37 @@ public:
     {
         return trackId;
     }
+
+    bool operator==(const Track &other)
+    {
+        if (other.trackId == this->trackId)
+            return true;
+        return false;
+    }
 };
 
 class IOUTracker
 {
 private:
+    std::vector<Track> activeTracks;
+    std::vector<Track> finishedTracks;
+
+protected:
     unsigned int maxShadowCount;
     unsigned int minTrackLength;
     double iouThreshold;
     double minConfidenceThreshold;
-    std::vector<Track> activeTracks;
-    std::vector<Track> finishedTracks;
     unsigned int trackIdCount = 1;
+    bool initialised = false;
 
 public:
+    explicit IOUTracker(double minConfidenceThreshold)
+    {
+        this->minConfidenceThreshold = minConfidenceThreshold;
+        this->minTrackLength = 1;
+        this->maxShadowCount = 1;
+        this->iouThreshold = 0.65;
+    };
     explicit IOUTracker(unsigned int maxShadowCount,
                         unsigned int minTrackLength,
                         double iouThreshold,
@@ -142,7 +193,7 @@ public:
                                                          iouThreshold(iouThreshold),
                                                          minConfidenceThreshold(minConfidenceThreshold) {}
 
-    void init(const std::vector<std::vector<double>> &primeDetections)
+    void init(const std::vector<Detection> &primeDetections)
     {
         activeTracks.clear();
         finishedTracks.clear();
@@ -157,15 +208,20 @@ public:
     }
 
     // pass by copy here
-    std::vector<Track> update(const std::vector<std::vector<double>> &primeDetections)
+    std::vector<Track> update(const std::vector<Detection> &primeDetections)
     {
-
-        std::vector<std::vector<double>> detections = primeDetections;
+        if (!initialised)
+        {
+            init(primeDetections);
+            initialised = true;
+            return this->activeTracks;
+        }
+        std::vector<Detection> detections = primeDetections;
         std::vector<unsigned int> toErase; // holds indices of active tracks to erase
         for (size_t t = 0; t < activeTracks.size(); t++)
         {
             double bestIOU = 0.0;
-            std::vector<double> bestBox;
+            Detection bestBox;
             // iterator
             int bestIndex = -1;
             for (size_t i = 0; i < detections.size(); i++)
@@ -198,12 +254,7 @@ public:
                 }
             }
         }
-        // remove cutoff tracks before adding new ones
-        // remove starting from the latest!
-        for (int k = (int)toErase.size() - 1; k >= 0; k--)
-        {
-            activeTracks.erase(activeTracks.begin() + toErase[k]);
-        }
+        eraseTracks(toErase);
         // push back remaining detections as new tracks
         for (const auto &det : detections)
         {
@@ -214,6 +265,18 @@ public:
             }
         }
         return this->activeTracks;
+    }
+
+    void eraseTracks(std::vector<unsigned int> toEraseIndx)
+    {
+        // ascending sort
+        std::sort(toEraseIndx.begin(), toEraseIndx.end());
+        // remove cutoff tracks before adding new ones
+        // remove starting from the latest, i.e. largest index of the list!
+        for (int k = (int)toEraseIndx.size() - 1; k >= 0; k--)
+        {
+            this->activeTracks.erase(this->activeTracks.begin() + toEraseIndx[k]);
+        }
     }
 
     std::vector<unsigned int> getActiveTrackIds() const
@@ -228,13 +291,6 @@ public:
     std::vector<Track> getActiveTracks()
     {
         return activeTracks;
-    }
-
-    std::vector<Track> getFinalTracks()
-    {
-        std::copy_if(activeTracks.begin(), activeTracks.end(), std::back_inserter(finishedTracks), [this](const auto &track)
-                     { return track.getTrackLength() >= minTrackLength; });
-        return finishedTracks;
     }
 };
 

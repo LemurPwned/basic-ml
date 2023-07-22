@@ -7,5 +7,9 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "basic_ml"
+version = "0.0.1"
+
 [tool.isort]
 profile = "black"

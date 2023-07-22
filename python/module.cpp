@@ -3,6 +3,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 
+#include "byte.hpp"
 #include "tracker.hpp"
 #include "rpca.hpp"
 
@@ -24,7 +25,7 @@ PYBIND11_MODULE(basic_ml, m)
         .def("getS", &RPCA::getS, py::return_value_policy::reference_internal);
 
     py::module tracker_module = m.def_submodule("tracker", "IOU Tracker");
-    py::class_<IOUTracker>(tracker_module, "Tracker")
+    py::class_<IOUTracker>(tracker_module, "IOUTracker")
         .def(py::init<unsigned int, unsigned int, double, double>(),
              "maxShadowCount"_a = 30,
              "minTrackLength"_a = 3,
@@ -33,16 +34,25 @@ PYBIND11_MODULE(basic_ml, m)
         .def("init", &IOUTracker::init, "detections"_a.noconvert())
         .def("update", &IOUTracker::update, "detections"_a.noconvert())
         .def("getActiveTracks", &IOUTracker::getActiveTracks)
-        .def("getActiveTrackIds", &IOUTracker::getActiveTrackIds)
-        .def("getFinalTracks", &IOUTracker::getFinalTracks);
+        .def("getActiveTrackIds", &IOUTracker::getActiveTrackIds);
     py::class_<Track>(tracker_module, "Track")
         .def(py::init<const std::vector<double> &>())
-        .def("getBestTrackScore", &Track::getBestTrackScore)
         .def("getTrackLength", &Track::getTrackLength)
         .def("getLastDetection", &Track::getLastDetection)
         .def("getShadowCount", &Track::getShadowCount)
         .def("getId", &Track::getId)
         .def("getDetections", &Track::getDetections);
+
+    py::class_<ByteTracker>(tracker_module, "ByteTracker")
+        .def(py::init<double, double, double>(),
+             "IOUMatchThreshold"_a = 0.9,
+             "highConfidenceThreshold"_a = 0.5,
+             "lowConfidenceThreshold"_a = 0.1)
+        .def("update", &ByteTracker::update, "detections"_a.noconvert());
+
+    py::class_<ByteTrack>(tracker_module, "ByteTrack")
+        .def("getLastDetection", &ByteTrack::getLastDetection)
+        .def("getId", &ByteTrack::getId);
     tracker_module.def("computeIOU", &computeIOU, "box1"_a.noconvert(), "box2"_a.noconvert());
     tracker_module.def("computeNMS", &computeNMS, "boxesList"_a.noconvert(), "iouThreshold"_a = 0.9);
 
